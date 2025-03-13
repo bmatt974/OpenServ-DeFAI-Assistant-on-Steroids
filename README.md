@@ -1,4 +1,4 @@
-# Agent Starter / OpenServ SDK Tutorial
+# OpenServ Agent Boilerplate
 
 A starter project to help you get started building AI agents with the [OpenServ SDK](https://github.com/openserv-labs/sdk) - a TypeScript framework that simplifies agent development. Whether you're new to AI development or an experienced developer, this guide will help you get started quickly.
 
@@ -23,8 +23,8 @@ A starter project to help you get started building AI agents with the [OpenServ 
 First, clone this agent-starter template repository to get a pre-configured project:
 
 ```bash
-git clone https://github.com/openserv-labs/agent-starter.git
-cd agent-starter
+git clone git@github.com:bmatt974/openserv-agent-boilerplate.git custom-agent
+cd custom-agent
 npm install
 ```
 

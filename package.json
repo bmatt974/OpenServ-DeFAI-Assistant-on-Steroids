@@ -1,7 +1,7 @@
 {
-  "name": "agent-starter",
+  "name": "custom-agent-name",
   "version": "1.0.0",
-  "description": "A lightning fast starter for autonomous AI agent development",
+  "description": "Agent description",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only -r dotenv/config src/index.ts",
@@ -17,7 +17,7 @@
     "agent",
     "openserv-labs"
   ],
-  "author": "",
+  "author": "Mathieu BARBER",
   "license": "ISC",
   "dependencies": {
     "@openserv-labs/sdk": "^1.1.0",

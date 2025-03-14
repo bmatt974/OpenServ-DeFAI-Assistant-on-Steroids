@@ -17,7 +17,13 @@ export class TaskHelper {
     if (!this.action) {
       return true // for local testing
     }
-    return this.action.type === 'do-task'
+    return this.hasTask()
+  }
+
+  hasTask(): this is {
+    action: { type: 'do-task'; workspace: { id: number }; task: { id: number } }
+  } {
+    return !!this.action && this.action.type === 'do-task' && 'task' in this.action
   }
 
   async logInfo(message: string) {
@@ -33,7 +39,7 @@ export class TaskHelper {
   }
 
   private async log(severity: 'info' | 'warning' | 'error', message: string) {
-    if (!('task' in this.action)) return
+    if (!this.action || this.action.type !== 'do-task') return
 
     return await this.agent.addLogToTask({
       workspaceId: this.action.workspace.id,
@@ -47,7 +53,7 @@ export class TaskHelper {
   async updateStatus(
     status: 'to-do' | 'in-progress' | 'done' | 'error' | 'human-assistance-required' | 'cancelled'
   ) {
-    if (!('task' in this.action)) return
+    if (!this.action || this.action.type !== 'do-task') return
 
     return await this.agent.updateTaskStatus({
       workspaceId: this.action.workspace.id,
@@ -57,7 +63,9 @@ export class TaskHelper {
   }
 
   getLastHumanAssistanceResponse(): string | null {
-    if ('task' in this.action && this.action.task?.humanAssistanceRequests) {
+    if (!this.action || this.action.type !== 'do-task') return null
+
+    if (this.action.task?.humanAssistanceRequests) {
       return this.action.task.humanAssistanceRequests.at(-1)?.humanResponse ?? null
     }
     return null
@@ -65,6 +73,8 @@ export class TaskHelper {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async sendChatMessage(message: string): Promise<any> {
+    if (!this.action || this.action.type !== 'do-task') return
+
     return await this.agent.sendChatMessage({
       workspaceId: this.action.workspace.id,
       agentId: this.action.me.id,
@@ -74,6 +84,8 @@ export class TaskHelper {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async uploadFile(params: HelperUploadFileParams): Promise<any> {
+    if (!this.action || this.action.type !== 'do-task') return
+
     return await this.agent.uploadFile({
       workspaceId: this.action.workspace.id,
       path: params.path,
@@ -85,6 +97,8 @@ export class TaskHelper {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getFiles(): Promise<any> {
+    if (!this.action || this.action.type !== 'do-task') return
+
     return await this.agent.getFiles({
       workspaceId: this.action.workspace.id
     })

@@ -1,28 +1,31 @@
 import 'dotenv/config'
 import { CustomAgent } from './custom-agent'
-import { HelloCapability } from './capabilities/HelloCapability'
+import { ScrapeTweetFromUserCapability } from './capabilities/ScrapeTweetFromUserCapability'
 
 // Create the agent
 const agent = new CustomAgent({
-  systemPrompt: 'You are an agent that '
+  systemPrompt:
+    'You are an agent that scrape Twitter Posts and Discussions from user and POST to an endpoint'
 })
 
-agent.addCapabilities([HelloCapability])
+agent.addCapabilities([ScrapeTweetFromUserCapability])
 
 // Start the agent's HTTP server
 agent.start()
 
+/*
 async function main() {
-  const HelloCapabilityTesting = await agent.process({
+  const ScrapeTesting = await agent.process({
     messages: [
       {
         role: 'user',
-        content: 'Say hello to Swell'
+        content: 'Scrape 100 latest tweets from AIXBT (user_id : 1852674305517342720)'
       }
     ]
   })
 
-  console.log('HelloCapabilityTesting:', HelloCapabilityTesting.choices[0].message.content)
+  console.log('ScrapeTesting:', ScrapeTesting.choices[0].message.content)
 }
 
 main().catch(console.error)
+*/

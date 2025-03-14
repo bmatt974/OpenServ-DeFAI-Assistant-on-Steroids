@@ -17,13 +17,6 @@ export const HelloCapability = {
     { args, action }: { args: z.infer<typeof schema>; action?: z.infer<typeof actionSchema> },
     messages: ChatCompletionMessageParam[]
   ): Promise<string> {
-    const helper = new TaskHelper(action, this)
-
-    if (!helper.isDoTask()) {
-      console.log(action, messages)
-      return 'Not implemented'
-    }
-
     console.log('args:', args)
     return `Hello ${args.username} form capability`
 

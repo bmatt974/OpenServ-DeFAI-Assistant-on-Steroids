@@ -3,7 +3,7 @@ import { Agent } from '@openserv-labs/sdk'
 import { actionSchema } from '@openserv-labs/sdk/dist/types'
 
 export class TaskHelper {
-  private action: z.infer<typeof actionSchema>
+  private action: z.infer<typeof actionSchema> | undefined
   private agent: Agent
 
   constructor(action: z.infer<typeof actionSchema> | undefined, agent: Agent) {

@@ -1,7 +1,7 @@
 {
-  "name": "custom-agent-name",
+  "name": "openserv-twitter-scraper",
   "version": "1.0.0",
-  "description": "Agent description",
+  "description": "OpenServ Twitter scraper agent designed to scrape twitter posts",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only -r dotenv/config src/index.ts",

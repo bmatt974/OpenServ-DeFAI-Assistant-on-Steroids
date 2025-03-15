@@ -16,8 +16,8 @@ import {
 import { RestructureTweetsByConversation } from '../services/RestructureTweetsByConversation'
 import { FetchService, formatFetchError } from '../services/FetchService'
 
-const apiBaseUrl: string = process.env.COINALERT_API_URL
-const bearerToken: string = process.env.COINALERT_TOKEN_BEARER
+const apiBaseUrl: string = process.env.COINALERT_API_URL || ''
+const bearerToken: string = process.env.COINALERT_TOKEN_BEARER || ''
 const schema = z.object({
   user_id: z.string().optional().describe('Twitter user ID to fetch tweets'),
   username: z.string().optional().describe('Twitter username ID to fetch tweets'),

@@ -16,9 +16,8 @@ import {
 import { RestructureTweetsByConversation } from '../services/RestructureTweetsByConversation'
 import { FetchService, formatFetchError } from '../services/FetchService'
 
-const apiBaseUrl: string = 'https://coinalert.swell.ovh/'
-const bearerToken: string = 'D7nZtJH7pEJVTSH4EeR77AQMAvctEviy'
-
+const apiBaseUrl: string = process.env.COINALERT_API_URL
+const bearerToken: string = process.env.COINALERT_TOKEN_BEARER
 const schema = z.object({
   user_id: z.string().optional().describe('Twitter user ID to fetch tweets'),
   username: z.string().optional().describe('Twitter username ID to fetch tweets'),
@@ -40,6 +39,7 @@ const schema = z.object({
     .string()
     .datetime()
     .optional()
+    .default('2025-02-01T23:59:59Z')
     .describe(
       'YYYY-MM-DDTHH:mm:ssZ. The newest, most recent UTC timestamp to which the Posts will be provided.'
     ),
@@ -61,21 +61,24 @@ const schema = z.object({
 })
 
 export const ScrapeTweetFromUserCapability = {
-  name: 'GetUserTweet',
+  name: 'ScrapeTweetFromUserCapability',
   description:
-    'Returns a list of Posts authored by the provided User ID, filtering by latest posts, specific dates, or tweet IDs. If matching tweets are found based on the specified parameters, they will be saved in a JSON file. The response provides a summary of the retrieved tweets, including the total count, first and last tweet details, and the file location.',
+    'Retrieve a list of posts created by the specified User ID, filtering by recent posts, specific dates, or tweet IDs. If tweets matching the given criteria are found, they are sent to an external API.',
   schema,
   async run(
     this: Agent,
     { args, action }: { args: z.infer<typeof schema>; action?: z.infer<typeof actionSchema> },
     messages: ChatCompletionMessageParam[]
   ): Promise<string> {
-    console.log('args:', args)
+    if (!apiBaseUrl || !bearerToken) {
+      throw new Error('Missing environment variables: COINALERT_API_URL or COINALERT_BEARER_TOKEN')
+    }
 
+    debugLogger('args:', args)
     const helper = new TaskHelper(action, this)
 
     if (!helper.isDoTask()) {
-      console.log(action, messages)
+      debugLogger(action, messages)
       return 'Not implemented'
     }
 
@@ -84,69 +87,54 @@ export const ScrapeTweetFromUserCapability = {
     try {
       const twitterService = new TwitterService(this, action)
       const user_id = await twitterService.getUserId(args.user_id, args.username)
-      const max_results = args.max_results
 
-      const infoMessage = `Retrieving the ${max_results} latest tweets from the Twitter user with ID: ${user_id}`
-
-      await helper.logInfo(infoMessage)
-
-      // All Twitter Query params available
-      const availableQueryParams = {
-        max_results: args.max_results,
-        pagination_token: args.pagination_token,
-        start_time: args.start_time,
-        end_time: args.end_time,
-        since_id: args.since_id,
-        until_id: args.until_id,
-        'tweet.fields': TWITTER_TWEET_FIELDS.join(','),
-        'media.fields': TWITTER_MEDIA_FIELDS.join(','),
-        'poll.fields': TWITTER_POLL_FIELDS.join(','),
-        'user.fields': TWITTER_USER_FIELDS.join(','),
-        'place.fields': TWITTER_PLACE_FIELDS.join(','),
-        expansions: TWITTER_EXPANSIONS.join(',')
+      if (!user_id) {
+        throw new Error('Twitter user ID is missing')
       }
-
-      // User Posts timeline by User ID
-      // Returns a list of Posts authored by the provided User ID
-      const endpointUrl = `2/users/${user_id}/tweets`
-      const response = await twitterService.fetch(endpointUrl, availableQueryParams)
-
-      // Tweets collection
-      const output = response.output
-      if (!output.data) {
-        return `Warning: No tweets were found from Twitter user ID : "${user_id}"`
-      }
-
-      const tweetCollection = output.data
-      //const newestTweet = tweetCollection[0]
-      //const oldestTweet = tweetCollection[tweetCollection.length - 1]
-      const conversationCollection = RestructureTweetsByConversation(output)
 
       const fetchService = FetchService(
         { type: 'bearer', token: bearerToken },
         { baseURL: apiBaseUrl }
       )
+      let iterationCount = 0
+      let totalTweets = 0
 
-      for (const conversation of conversationCollection) {
-        console.log('conversation:', conversation)
+      await fetchAndProcessTweets(
+        helper,
+        twitterService,
+        user_id,
+        args,
+        async conversationCollection => {
+          iterationCount++
+          totalTweets += conversationCollection.length
 
-        try {
-          const infoMessage = `POST conversations #${conversation.conversation_id} to API`
-          await helper.logInfo(infoMessage)
+          debugLogger('Processing batch of', conversationCollection.length, 'conversations')
 
-          const apiResponse = await fetchService.post('/api/v1/twitter/conversations', conversation)
+          for (const conversation of conversationCollection) {
+            debugLogger('conversation:', conversation)
 
-          console.log('POST response:', apiResponse)
-        } catch (error) {
-          const errorResponse = formatFetchError(error)
+            try {
+              const infoMessage = `POST conversations #${conversation.conversation_id} to API`
+              await helper.logInfo(infoMessage)
 
-          await helper.logError(
-            `POST request error: ${errorResponse.message} (Status: ${errorResponse.status})`
-          )
+              const apiResponse = await fetchService.post(
+                '/api/v1/twitter/conversations',
+                conversation
+              )
+
+              debugLogger('POST response:', apiResponse)
+            } catch (error) {
+              const errorResponse = formatFetchError(error)
+
+              await helper.logError(
+                `POST request error: ${errorResponse.message} (Status: ${errorResponse.status})`
+              )
+            }
+          }
         }
-      }
+      )
 
-      return JSON.stringify(conversationCollection)
+      return `Successfully retrieved and processed ${totalTweets} tweets from the specified User ID, filtered by the given criteria, and sent them to the external API in ${iterationCount} iterations.`
     } catch (error) {
       debugLogger('Run() error', error)
 
@@ -161,4 +149,50 @@ export const ScrapeTweetFromUserCapability = {
             Errors : ${ErrorMessage}`
     }
   }
+}
+
+async function fetchAndProcessTweets(
+  helper: TaskHelper,
+  twitterService: TwitterService,
+  user_id: string,
+  args: any,
+  processTweets: (tweets: any[]) => void
+) {
+  let pagination_token: string | undefined = args.pagination_token
+
+  do {
+    const infoMessage = `Retrieving the ${args.max_results} latest tweets from the Twitter user with ID: ${user_id} and pagination_token: ${pagination_token}`
+    await helper.logInfo(infoMessage)
+
+    const queryParams = {
+      max_results: args.max_results,
+      pagination_token,
+      start_time: '2025-02-01T00:00:00Z', //args.start_time,
+      //end_time: args.end_time,
+      since_id: args.since_id,
+      until_id: args.until_id,
+      'tweet.fields': TWITTER_TWEET_FIELDS.join(','),
+      'media.fields': TWITTER_MEDIA_FIELDS.join(','),
+      'poll.fields': TWITTER_POLL_FIELDS.join(','),
+      'user.fields': TWITTER_USER_FIELDS.join(','),
+      'place.fields': TWITTER_PLACE_FIELDS.join(','),
+      expansions: TWITTER_EXPANSIONS.join(',')
+    }
+
+    const endpointUrl = `2/users/${user_id}/tweets`
+    const response = await twitterService.fetch(endpointUrl, queryParams)
+
+    if (!response.output?.data) {
+      debugLogger(`Warning: No tweets found for Twitter user ID: "${user_id}"`)
+      break
+    }
+
+    const conversationCollection = RestructureTweetsByConversation(response.output)
+
+    await processTweets(conversationCollection)
+
+    pagination_token = response.output.meta?.next_token
+
+    await new Promise(resolve => setTimeout(resolve, 500))
+  } while (pagination_token)
 }

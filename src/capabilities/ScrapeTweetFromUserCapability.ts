@@ -1,6 +1,10 @@
 import { z } from 'zod'
 import { Agent } from '@openserv-labs/sdk'
-import { actionSchema, doTaskActionSchema } from '@openserv-labs/sdk/dist/types'
+import {
+  actionSchema,
+  type CreateTaskParams,
+  doTaskActionSchema
+} from '@openserv-labs/sdk/dist/types'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 import { TaskHelper } from '../helpers/TaskHelper'
 import { debugLogger } from '../helpers/Helpers'
@@ -63,7 +67,7 @@ const schema = z.object({
 export const ScrapeTweetFromUserCapability = {
   name: 'ScrapeTweetFromUserCapability',
   description:
-    'Retrieve a list of posts created by the specified User ID, filtering by recent posts, specific dates, or tweet IDs. If tweets matching the given criteria are found, they are sent to an external API.',
+    'Retrieve and process tweets created by the specified User ID, filtering them by recent posts, specific dates, or tweet IDs. The matching tweets are sent to an external API in multiple POST requests. The response includes the total number of tweets retrieved, number of iterations performed, and total POST requests sent.',
   schema,
   async run(
     this: Agent,
@@ -83,6 +87,8 @@ export const ScrapeTweetFromUserCapability = {
     }
 
     if (!action || action.type !== 'do-task') return ''
+    let totalTweets = 0
+    let totalWebhookPosts = 0
 
     try {
       const twitterService = new TwitterService(this, action)
@@ -97,7 +103,6 @@ export const ScrapeTweetFromUserCapability = {
         { baseURL: apiBaseUrl }
       )
       let iterationCount = 0
-      let totalTweets = 0
 
       await fetchAndProcessTweets(
         helper,
@@ -112,6 +117,7 @@ export const ScrapeTweetFromUserCapability = {
 
           for (const conversation of conversationCollection) {
             debugLogger('conversation:', conversation)
+            totalWebhookPosts++
 
             try {
               const infoMessage = `POST conversations #${conversation.conversation_id} to API`
@@ -126,7 +132,7 @@ export const ScrapeTweetFromUserCapability = {
             } catch (error) {
               const errorResponse = formatFetchError(error)
 
-              await helper.logError(
+              await helper.logWarning(
                 `POST request error: ${errorResponse.message} (Status: ${errorResponse.status})`
               )
             }
@@ -134,7 +140,15 @@ export const ScrapeTweetFromUserCapability = {
         }
       )
 
-      return `Successfully retrieved and processed ${totalTweets} tweets from the specified User ID, filtered by the given criteria, and sent them to the external API in ${iterationCount} iterations.`
+      if (totalTweets === 0) {
+        debugLogger('return : ', 'No tweets found')
+        await helper.updateStatus('done')
+
+        return `No tweets found for Twitter user ID ${args.user_id}.`
+      }
+      debugLogger('return : ', 'Successfully')
+      await helper.updateStatus('done')
+      return `Successfully retrieved and processed ${totalTweets} tweets (in ${iterationCount} iterations) from the specified User ID, filtered by the given criteria, and sent them to the external API in ${totalWebhookPosts} POSTs request.`
     } catch (error) {
       debugLogger('Run() error', error)
 
@@ -195,4 +209,6 @@ async function fetchAndProcessTweets(
 
     await new Promise(resolve => setTimeout(resolve, 500))
   } while (pagination_token)
+
+  debugLogger('Finished fetchAndProcessTweets loop.')
 }

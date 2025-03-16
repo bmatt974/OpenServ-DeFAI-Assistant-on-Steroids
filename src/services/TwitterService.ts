@@ -59,6 +59,29 @@ export class TwitterService {
     return response
   }
 
+  async post(url: string, data: Record<string, string | number | undefined | null>) {
+    debugLogger('endpointUrl', url)
+    debugLogger('data', data)
+
+    const response = await this.agent.callIntegration({
+      workspaceId: this.action.workspace.id,
+      integrationId: 'twitter-v2',
+      details: {
+        endpoint: url,
+        method: 'POST',
+        data: data
+      }
+    })
+
+    // Check if integration calling has errors
+    checkIntegrationErrors(response, 'Twitter-v2')
+
+    // Twitter response
+    debugLogger('twitter-v2 response', response.output)
+
+    return response
+  }
+
   /**
    * Twitter Id Finder lookup
    * @param username

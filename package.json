@@ -1,6 +1,6 @@
 {
   "name": "openserv-twitter-scraper",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "OpenServ Twitter scraper agent designed to scrape twitter posts",
   "main": "dist/index.js",
   "scripts": {

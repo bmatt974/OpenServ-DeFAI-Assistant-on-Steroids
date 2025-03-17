@@ -86,13 +86,14 @@ export class TaskHelper {
   async uploadFile(params: HelperUploadFileParams): Promise<any> {
     if (!this.action || this.action.type !== 'do-task') return
 
-    return await this.agent.uploadFile({
+    const payload = {
       workspaceId: this.action.workspace.id,
       path: params.path,
       file: params.file,
       skipSummarizer: params.skipSummarizer || false,
-      taskIds: params.taskIds ?? [this.action?.task.id]
-    })
+      taskIds: params.taskIds ?? this.action?.task.id
+    }
+    return await this.agent.uploadFile(payload)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,6 +103,14 @@ export class TaskHelper {
     return await this.agent.getFiles({
       workspaceId: this.action.workspace.id
     })
+  }
+
+  getAbsoluteUrl(relativeFile: string, files: Array<{ path: string; fullUrl: string }>): string {
+    const fileName = relativeFile.split('/').pop()
+    console.log('fileName', fileName)
+    const file = files.find(f => f.path === fileName)
+    console.log('file', file)
+    return file ? file.fullUrl : relativeFile
   }
 }
 

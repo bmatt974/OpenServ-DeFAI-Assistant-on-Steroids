@@ -67,7 +67,7 @@ const schema = z.object({
 export const ScrapeTweetFromUserCapability = {
   name: 'ScrapeTweetFromUserCapability',
   description:
-    'Retrieve and process tweets created by the specified User ID, filtering them by recent posts, specific dates, or tweet IDs. The matching tweets are sent to an external API in multiple POST requests. The response includes the total number of tweets retrieved, number of iterations performed, and total POST requests sent.',
+    'Retrieve and process tweets created by the specified User ID, filtering them by recent posts, specific dates, or tweet IDs. The matching tweets are sent to an external API in multiple POST requests. The response includes the total number of tweets retrieved, number of iterations performed, and total POST requests sent. No json files returned',
   schema,
   async run(
     this: Agent,
@@ -133,7 +133,7 @@ export const ScrapeTweetFromUserCapability = {
               const errorResponse = formatFetchError(error)
 
               await helper.logWarning(
-                `POST request error: ${errorResponse.message} (Status: ${errorResponse.status})`
+                `POST request error: ${errorResponse.message} (Status: ${errorResponse.status}) - Ignore, continue processing`
               )
             }
           }

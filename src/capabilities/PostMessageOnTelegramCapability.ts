@@ -15,7 +15,7 @@ const schema = z.object({
 
 export const PostMessageOnTelegramCapability = {
   name: 'PostMessageOnTelegramCapability',
-  description: 'Post a message on Telegram and retrieve the message ID if successful.',
+  description: 'Post a message on Telegram and retrieve the message information if successful.',
   schema,
   async run(
     this: CustomAgent,
@@ -52,10 +52,14 @@ export const PostMessageOnTelegramCapability = {
       debugLogger('payload', payload)
       const response = await axios.post(url, payload)
 
-      debugLogger('Message sent :', response.data);
+      debugLogger('Message sent :', response.data)
     } catch (error) {
-      debugLogger('Error :', error.response ? error.response.data : error.message);
-      return 'Erreur en envoyant le message'
+      if (error instanceof Error) {
+        debugLogger('Error:', error.message)
+      } else {
+        debugLogger('Unknown error:', error)
+      }
+      return 'Error sending message'
     }
 
     /*

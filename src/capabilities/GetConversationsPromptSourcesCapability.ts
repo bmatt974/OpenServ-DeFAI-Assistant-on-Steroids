@@ -4,9 +4,10 @@ import { actionSchema } from '@openserv-labs/sdk/dist/types'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 import { TaskHelper } from '../helpers/TaskHelper'
 import { FetchService } from '../services/FetchService'
+import { debugLogger } from "../helpers/Helpers";
 
 const schema = z.object({
-  username: z.string().describe('The username to say hello to')
+  //url: z.string().url().optional().describe('The API endpoint URL to post data.')
 })
 
 export const GetConversationsPromptSourcesCapability = {
@@ -32,7 +33,27 @@ export const GetConversationsPromptSourcesCapability = {
     helper.logInfo('Fetching conversations prompt for the latest conversations...')
     const response = await fetchService.get('/api/v1/twitter/conversations/prompting')
 
-    console.log('response:', response.data)
+    if (response.status === 200) {
+      const filename = 'latest_conversation.json'
+      const fileContent = JSON.stringify(response.data, null, 2)
+      const payloadFile = {
+        path: filename,
+        file: fileContent
+      }
+
+      try {
+        await helper.uploadFile(payloadFile)
+        return `Conversations fetched successfully. Content is on file : ${filename}`
+      } catch (error) {
+        if (error instanceof Error) {
+          debugLogger('Error:', error.message)
+        } else {
+          debugLogger('Unknown error:', error)
+        }
+        return `Error saving file : ${filename}`
+      }
+    }
+
     return JSON.stringify(response.data, null, 2)
   }
 }

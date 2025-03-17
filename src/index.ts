@@ -4,6 +4,7 @@ import { ScrapeTweetFromUserCapability } from './capabilities/ScrapeTweetFromUse
 import { GetConversationsPromptSourcesCapability } from './capabilities/GetConversationsPromptSourcesCapability'
 import { PostMessageOnTwitterCapability } from './capabilities/PostMessageOnTwitterCapability'
 import { PostMessageOnTelegramCapability } from './capabilities/PostMessageOnTelegramCapability'
+import { CreateArticleCapability } from './capabilities/CreateArticleCapability'
 
 // Create the agent
 const agent = new CustomAgent({
@@ -14,6 +15,7 @@ const agent = new CustomAgent({
 agent.addCapabilities([
   ScrapeTweetFromUserCapability,
   GetConversationsPromptSourcesCapability,
+  CreateArticleCapability,
   PostMessageOnTwitterCapability,
   PostMessageOnTelegramCapability
 ])

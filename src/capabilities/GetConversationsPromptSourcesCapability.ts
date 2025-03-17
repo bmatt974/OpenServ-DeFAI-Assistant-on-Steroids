@@ -13,7 +13,7 @@ const schema = z.object({
 export const GetConversationsPromptSourcesCapability = {
   name: 'GetConversationsPromptSourcesCapability',
   description:
-    'Retrieves the latest Twitter conversations as structured JSON data, intended to be used as contextual input for prompt-based content generation. Returns an empty result if no new conversations are found during the specified timeframe.',
+    'Process a pre-provided set of Twitter conversations to generate an article. Upon completion, return the name of the file where the generated content has been saved.',
   schema,
   async run(
     this: CustomAgent,
@@ -30,7 +30,7 @@ export const GetConversationsPromptSourcesCapability = {
       { baseURL: apiBaseUrl }
     )
 
-    helper.logInfo('Fetching conversations prompt for the latest conversations...')
+    helper.logInfo('Loading conversations source file')
     const response = await fetchService.get('/api/v1/twitter/conversations/prompting')
 
     if (response.status === 200) {
@@ -43,7 +43,7 @@ export const GetConversationsPromptSourcesCapability = {
 
       try {
         await helper.uploadFile(payloadFile)
-        return `Conversations fetched successfully. Content is on file : ${filename}`
+        return `File saved successfully.`
       } catch (error) {
         if (error instanceof Error) {
           debugLogger('Error:', error.message)

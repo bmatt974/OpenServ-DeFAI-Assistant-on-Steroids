@@ -53,6 +53,9 @@ export const PostMessageOnTelegramCapability = {
       const response = await axios.post(url, payload)
 
       debugLogger('Message sent :', response.data)
+
+      return `Message successfully posted on Telegram :
+          Message : ${JSON.stringify(response.data, null, 2)}`
     } catch (error) {
       if (error instanceof Error) {
         debugLogger('Error:', error.message)

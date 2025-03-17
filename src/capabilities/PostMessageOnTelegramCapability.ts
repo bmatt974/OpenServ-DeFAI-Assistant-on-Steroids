@@ -4,7 +4,10 @@ import { actionSchema } from '@openserv-labs/sdk/dist/types'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 import { TaskHelper } from '../helpers/TaskHelper'
 import { debugLogger } from '../helpers/Helpers'
-//import { TelegramService } from '../services/TelegramService'
+import axios from 'axios'
+
+const telegramChatId: string = process.env.TELEGRAM_CHAT_ID || ''
+const telegramBotToken: string = process.env.TELEGRAM_BOT_TOKEN || ''
 
 const schema = z.object({
   message: z.string().describe('Telegram message')
@@ -19,6 +22,10 @@ export const PostMessageOnTelegramCapability = {
     { args, action }: { args: z.infer<typeof schema>; action?: z.infer<typeof actionSchema> },
     messages: ChatCompletionMessageParam[]
   ): Promise<string> {
+    if (!telegramChatId || !telegramBotToken) {
+      throw new Error('Missing environment variables: TELEGRAM_CHAT_ID or TELEGRAM_BOT_TOKEN')
+    }
+
     debugLogger('args:', args)
     const helper = new TaskHelper(action, this)
 
@@ -29,48 +36,48 @@ export const PostMessageOnTelegramCapability = {
 
     if (!action || action.type !== 'do-task') return ''
 
-    await this.requestHumanAssistance({
-      workspaceId: action.workspace.id,
-      taskId: action.task.id,
-      type: 'text',
-      question: 'Need Telegram integration.'
-    })
+    try {
+      /*
+      const updateUrl = `https://api.telegram.org/bot${telegramBotToken}/getUpdates`
+      const response3 = await axios.get(updateUrl)
+      console.log('info_with_channel_id:', JSON.stringify(response3.data, null, 2))
+      */
+
+      const url = `https://api.telegram.org/bot${telegramBotToken}/sendMessage`
+      const payload = {
+        chat_id: telegramChatId,
+        text: args.message,
+        parse_mode: 'HTML' // optional
+      }
+      debugLogger('payload', payload)
+      const response = await axios.post(url, payload)
+
+      debugLogger('Message sent :', response.data);
+    } catch (error) {
+      debugLogger('Error :', error.response ? error.response.data : error.message);
+      return 'Erreur en envoyant le message'
+    }
 
     /*
-    await helper.logInfo('Posting Message on Telegram')
-    const TelegramService = new TelegramService(this, action)
+    // OpenServ integration
+    const url = `/bot${telegramBotToken}/sendMessage`
+    //const url = `/sendMessage`
 
     const response = await this.callIntegration({
-      workspaceId: action.workspace.id,
-      integrationId: 'Telegram-v2',
+      workspaceId: 123,
+      integrationId: 'telegram',
       details: {
-        endpoint: '/2/Messages',
+        endpoint: url,
         method: 'POST',
         data: {
-          text: args.message
+          chat_id: telegramChatId, // '@ton_channel_username', // Ou l'ID du canal si privé
+          text: 'Hello from my AI agent via Telegram!',
+          parse_mode: 'HTML' // Optionnel
         }
       }
     })
-
-    // Check if integration calling has errors
-    checkIntegrationErrors(response, 'Telegram-v2')
-
-    // Telegram response
-    debugLogger('Telegram-v2 response', response)
-
-    const MessageId = response.output?.data?.id
-    const MessageText = response.output?.data?.text
-
-    if (MessageId && MessageText) {
-      const Message = {
-        text: MessageText,
-        id: MessageId
-      }
-
-      return `Message successfully posted on Telegram :
-          Message: ${JSON.stringify(Message, null, 2)}`
-    }
     */
+
     return 'Message can not be posted on Telegram'
   }
 }

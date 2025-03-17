@@ -4,7 +4,7 @@ import { actionSchema } from '@openserv-labs/sdk/dist/types'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 import { TaskHelper } from '../helpers/TaskHelper'
 import { FetchService } from '../services/FetchService'
-import { debugLogger } from "../helpers/Helpers";
+import { debugLogger } from '../helpers/Helpers'
 
 const schema = z.object({
   //url: z.string().url().optional().describe('The API endpoint URL to post data.')

@@ -5,7 +5,7 @@ import {
   type CreateTaskParams,
   doTaskActionSchema
 } from '@openserv-labs/sdk/dist/types'
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
+import type { ChatCompletionMessageParam } from '../types/openai'
 import { TaskHelper } from '../helpers/TaskHelper'
 import { debugLogger } from '../helpers/Helpers'
 import {

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { CustomAgent } from '../custom-agent'
 import { actionSchema } from '@openserv-labs/sdk/dist/types'
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
+import type { ChatCompletionMessageParam } from '../types/openai'
 import { TaskHelper } from '../helpers/TaskHelper'
 import { debugLogger } from '../helpers/Helpers'
 import axios from 'axios'

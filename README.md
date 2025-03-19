@@ -1,6 +1,7 @@
 # DeFAI Assistant 🏋️ on Steroids
 
 DeFAI Assistant is the ultimate Swiss Army knife powering https://KOLx.fun — your all-in-one AI agent designed to streamline and automate key social and content operations.
+
 It seamlessly integrates with Twitter, Telegram, and external platforms, offering advanced scraping, posting, and content creation features, tailored specifically for the Web3 and DeFi ecosystem.
 
 ## Capabilities :
@@ -38,14 +39,14 @@ In case of any error while processing a user, skip to the next user without stop
 ```
 
 ### 🔥 Fetch Latest Crypto Expert Twitter discussions
-The agent has a dedicated capability to:
+**The agent has a dedicated capability to:**
 
 - Retrieve the most recent Twitter discussions, threads, or posts from top crypto experts selected by KOLx.fun.
 - Aggregate and structure these conversations in a clean JSON format.
 - Provide essential metadata for each conversation (e.g., timestamp, expert username, post content, engagement metrics).
 - Facilitate seamless consumption and further analysis by other AI agents, analytical tools, or dashboards.
 
-This capability is ideal for:
+**This capability is ideal for:**
 
 - Trend analysis
 - Sentiment detection
@@ -92,4 +93,19 @@ Post message "Hello world" on Twitter
 Publish messages directly to a specified Telegram channel or group.
 ```
 Post message "Hello world" on Telegram
+```
+
+## How to handle external API authentication ?
+
+### Auth with apiKey
+```
+Fetch data from https://api.coingecko.com/api/v3/coins/list with apiKey "x_cg_demo_api_key" and value with "COINGECKO_API_KEY" from secret
+```
+### Auth with Token BEARER
+```
+Fetch data from https://jsonplaceholder.typicode.com/posts. Use Token BEARER from secret.  
+```  
+### Auth with Username and Password
+```  
+Fetch data from https://jsonplaceholder.typicode.com/posts with "john" username and password "MySecretLabel" from secret  
 ```

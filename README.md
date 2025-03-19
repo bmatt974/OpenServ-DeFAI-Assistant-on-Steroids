@@ -19,13 +19,11 @@ Number of iterations performed
 Total POST requests sent
 
 ```
-Scrape tweets for this user_id:
+Process all tweets and conversations from one hour ago up to now, for each of the following:
 - 1852674305517342720
 - 1849681919253925888
 - 223921570
-since 2025-03-15
-One task per user
-Ignore errors
+ Instructions: Handle one user at a time per task. In case of any error while processing a user, skip to the next user without stopping the process. Do not return the actual tweets. Return only a concise summary for each user, including: The total count of tweets processed. This task will be executed at regular intervals.
 ```
 
 ## 🕵️ Retrieve Twitter Conversations

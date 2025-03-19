@@ -41,13 +41,36 @@ export const GetConversationsPromptSourcesCapability = {
         file: fileContent
       }
 
+      console.log(fileContent)
+
       try {
         await helper.uploadFile(payloadFile)
         return `File saved successfully.`
       } catch (error) {
         if (error instanceof Error) {
           debugLogger('Error:', error.message)
-          console.log(error.message)
+          console.log('Error message:', error.message)
+
+          // Si c'est une erreur Axios
+          if (error.config && error.config.url) {
+            const url = error.config.baseURL
+              ? `${error.config.baseURL}${error.config.url}`
+              : error.config.url;
+            console.log('Request URL:', url)
+            debugLogger('Request URL:', url)
+
+            if (error.config.params) {
+              console.log('Query Params:', error.config.params)
+            }
+            if (error.config.data) {
+              console.log('Request Data:', error.config.data)
+            }
+          }
+
+          // Pour les erreurs Fetch ou autres
+          if (error.request && error.request.url) {
+            console.log('Request URL:', error.request.url)
+          }
         } else {
           debugLogger('Unknown error:', error)
           console.log(error)

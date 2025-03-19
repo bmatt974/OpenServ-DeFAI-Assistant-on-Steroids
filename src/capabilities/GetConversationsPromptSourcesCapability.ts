@@ -13,7 +13,7 @@ const schema = z.object({
 export const GetConversationsPromptSourcesCapability = {
   name: 'GetConversationsPromptSourcesCapability',
   description:
-    'Process a pre-provided set of Twitter conversations to generate an article. Upon completion, return the name of the file where the generated content has been saved.',
+    'Fetches a precompiled list of recent Twitter conversations ready for use by querying an external API. The retrieved conversations are then saved into a file for further processing or usage.',
   schema,
   async run(
     this: CustomAgent,

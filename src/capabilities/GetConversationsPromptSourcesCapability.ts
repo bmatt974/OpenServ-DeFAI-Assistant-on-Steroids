@@ -47,8 +47,10 @@ export const GetConversationsPromptSourcesCapability = {
       } catch (error) {
         if (error instanceof Error) {
           debugLogger('Error:', error.message)
+          console.log(error.message)
         } else {
           debugLogger('Unknown error:', error)
+          console.log(error)
         }
         return `Error saving file : ${filename}`
       }

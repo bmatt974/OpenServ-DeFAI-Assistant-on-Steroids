@@ -89,8 +89,10 @@ const schema = z.object({
 
 export const ScrapeTweetFromUserCapability = {
   name: 'ScrapeTweetFromUserCapability',
-  description:
-    'Retrieve and process tweets created by the specified User ID, filtering them by recent posts, specific dates, or tweet IDs. The matching tweets are sent to an external API in multiple POST requests. Or store insides multiple JSON files. The response includes the total number of tweets retrieved, number of iterations performed, and total POST requests sent.',
+  description: `Retrieve and process tweets created by the specified User ID, filtering them by recent posts, specific dates, or tweet IDs.
+The matching tweets can either be sent to an external API via multiple POST requests to a webhook, with authentication handled, or stored in multiple JSON files.
+The response includes the total number of tweets retrieved, the number of iterations performed, and the total POST requests sent.
+Pagination is handled to ensure complete data processing.`,
   schema,
   async run(
     this: Agent,
@@ -135,13 +137,14 @@ export const ScrapeTweetFromUserCapability = {
 
           // Post Twitter Conversation to an external webhook
           if (args.webhook_url) {
+            await helper.logInfo('POSTing each conversations to WEBHOOK')
             for (const conversation of conversationCollection) {
               //debugLogger('conversation:', conversation)
               totalWebhookPosts++
 
               try {
-                const infoMessage = `POST conversations #${conversation.conversation_id} to WEBHOOK`
-                await helper.logInfo(infoMessage)
+                //const infoMessage = `POST conversations #${conversation.conversation_id} to WEBHOOK`
+                //await helper.logInfo(infoMessage)
                 const apiResponse = await fetchService.post(args.webhook_url, conversation)
                 debugLogger('POST response:', apiResponse.status)
               } catch (error) {
@@ -154,10 +157,9 @@ export const ScrapeTweetFromUserCapability = {
           } else {
             // Or store inside JSON file
             const batchFileName = `twitter-conversations-user-${user_id}-batch-${hash ?? null}.json`
-
             helper.logInfo(`Storing conversation inside ${batchFileName} file`)
 
-            console.log('conversationCollection', conversationCollection)
+            //console.log('conversationCollection', conversationCollection)
 
             await helper.uploadFile({
               path: batchFileName,
@@ -173,7 +175,7 @@ export const ScrapeTweetFromUserCapability = {
         debugLogger('return : ', 'No tweets found')
         await helper.updateStatus('done')
 
-        return `No tweets found for Twitter user ID ${args.user_id}.`
+        return `No more tweets to process for Twitter user ID ${args.user_id}.`
       }
       debugLogger('return : ', 'Successfully')
       await helper.updateStatus('done')

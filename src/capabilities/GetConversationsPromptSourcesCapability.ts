@@ -41,6 +41,9 @@ export const GetConversationsPromptSourcesCapability = {
         file: fileContent
       }
 
+      return fileContent
+
+      /*
       console.log(fileContent)
 
       try {
@@ -59,6 +62,8 @@ export const GetConversationsPromptSourcesCapability = {
 
         return `Error saving file : ${filename}`
       }
+
+       */
     }
 
     return JSON.stringify(response.data, null, 2)

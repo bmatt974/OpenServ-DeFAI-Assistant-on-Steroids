@@ -14,19 +14,25 @@ The matching tweets can either be sent to an external API via multiple POST requ
 The response includes the total number of tweets retrieved, the number of iterations performed, and the total POST requests sent.
 Pagination is handled to ensure complete data processing.
 
-Prompts examples:
+**Prompt example with sent to an external API :**
 
 ```
-Process all tweets and conversations from one hour ago up to now, for each of the following:
+Process all tweets and conversations from one hour ago up to now, for each of the following User IDs:
 - 1852674305517342720
 - 1849681919253925888
 - 223921570
 
-Create one task per user. For each task, post the conversations data to: https://example.com/api/v1/tweets
-Use the Bearer token stored in the secret.
+Create one task per user, and for each task, perform the following actions:
 
-In case of any error while processing a user, skip to the next user without stopping the process.
+- Retrieve (scrape) the user's tweets and conversations within the specified time range.
+- Immediately POST the scraped data to: https://example.com/api/v1/tweets using the Bearer token stored in the secret.
+
+If an error occurs while processing a specific user (either during scraping or posting), skip to the next user without stopping the overall process.
+
 ```
+
+**Prompt example with result stored in multiple JSON files :**
+
 ```
 Process all tweets and conversations from one hour ago up to now, for each of the following:
 - aixbt_agent

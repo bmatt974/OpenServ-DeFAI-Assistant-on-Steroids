@@ -1,10 +1,6 @@
 import { z } from 'zod'
 import { Agent } from '@openserv-labs/sdk'
-import {
-  actionSchema,
-  type CreateTaskParams,
-  doTaskActionSchema
-} from '@openserv-labs/sdk/dist/types'
+import { actionSchema } from '@openserv-labs/sdk/dist/types'
 import type { ChatCompletionMessageParam } from '../types/openai'
 import { TaskHelper } from '../helpers/TaskHelper'
 import { debugLogger } from '../helpers/Helpers'
@@ -20,8 +16,6 @@ import {
 import { RestructureTweetsByConversation } from '../services/RestructureTweetsByConversation'
 import { FetchService, formatFetchError } from '../services/FetchService'
 
-const apiBaseUrl: string = process.env.COINALERT_API_URL || ''
-const bearerToken: string = process.env.COINALERT_TOKEN_BEARER || ''
 const schema = z.object({
   user_id: z.string().optional().describe('Twitter user ID to fetch tweets'),
   username: z.string().optional().describe('Twitter username ID to fetch tweets'),
@@ -61,23 +55,48 @@ const schema = z.object({
   pagination_token: z
     .string()
     .optional()
-    .describe("This parameter is used to get the next 'page' of results.")
+    .describe("This parameter is used to get the next 'page' of results."),
+  webhook_url: z
+    .string()
+    .url({ message: 'webhook_url must be a valid URL' })
+    .optional()
+    .describe('External URL where each conversation will be posted (must be a valid URL).'),
+  webhook_auth: z
+    .object({
+      type: z
+        .enum(['bearer', 'basic', 'apiKey'])
+        .describe(
+          "Authentication type: 'bearer' (Bearer Token), 'basic' (Basic Auth), or 'apiKey' (API Key)."
+        ),
+      token: z
+        .string()
+        .optional()
+        .describe("Bearer token for authorization (if type is 'bearer')."),
+
+      username: z.string().optional().describe("Username for Basic Auth (if type is 'basic')."),
+
+      password: z.string().optional().describe("Password for Basic Auth (if type is 'basic')."),
+
+      apiKey: z.string().optional().describe("API Key value (if type is 'apiKey')."),
+
+      apiKeyHeader: z
+        .string()
+        .optional()
+        .describe("Header name for API Key (if type is 'apiKey', e.g., 'X-API-Key').")
+    })
+    .optional()
 })
 
 export const ScrapeTweetFromUserCapability = {
   name: 'ScrapeTweetFromUserCapability',
   description:
-    'Retrieve and process tweets created by the specified User ID, filtering them by recent posts, specific dates, or tweet IDs. The matching tweets are sent to an external API in multiple POST requests. The response includes the total number of tweets retrieved, number of iterations performed, and total POST requests sent. No json files returned',
+    'Retrieve and process tweets created by the specified User ID, filtering them by recent posts, specific dates, or tweet IDs. The matching tweets are sent to an external API in multiple POST requests. Or store insides multiple JSON files. The response includes the total number of tweets retrieved, number of iterations performed, and total POST requests sent.',
   schema,
   async run(
     this: Agent,
     { args, action }: { args: z.infer<typeof schema>; action?: z.infer<typeof actionSchema> },
     messages: ChatCompletionMessageParam[]
   ): Promise<string> {
-    if (!apiBaseUrl || !bearerToken) {
-      throw new Error('Missing environment variables: COINALERT_API_URL or COINALERT_BEARER_TOKEN')
-    }
-
     debugLogger('args:', args)
     const helper = new TaskHelper(action, this)
 
@@ -89,6 +108,7 @@ export const ScrapeTweetFromUserCapability = {
     if (!action || action.type !== 'do-task') return ''
     let totalTweets = 0
     let totalWebhookPosts = 0
+    const uploadedFiles: string[] = []
 
     try {
       const twitterService = new TwitterService(this, action)
@@ -98,10 +118,8 @@ export const ScrapeTweetFromUserCapability = {
         throw new Error('Twitter user ID is missing')
       }
 
-      const fetchService = FetchService(
-        { type: 'bearer', token: bearerToken },
-        { baseURL: apiBaseUrl }
-      )
+      const fetchService = FetchService(args.webhook_auth)
+
       let iterationCount = 0
 
       await fetchAndProcessTweets(
@@ -109,33 +127,44 @@ export const ScrapeTweetFromUserCapability = {
         twitterService,
         user_id,
         args,
-        async conversationCollection => {
+        async function (conversationCollection: any[], hash: string | undefined) {
           iterationCount++
           totalTweets += conversationCollection.length
 
           debugLogger('Processing batch of', conversationCollection.length, 'conversations')
 
-          for (const conversation of conversationCollection) {
-            debugLogger('conversation:', conversation)
-            totalWebhookPosts++
+          // Post Twitter Conversation to an external webhook
+          if (args.webhook_url) {
+            for (const conversation of conversationCollection) {
+              //debugLogger('conversation:', conversation)
+              totalWebhookPosts++
 
-            try {
-              const infoMessage = `POST conversations #${conversation.conversation_id} to API`
-              await helper.logInfo(infoMessage)
-
-              const apiResponse = await fetchService.post(
-                '/api/v1/twitter/conversations',
-                conversation
-              )
-
-              debugLogger('POST response:', apiResponse)
-            } catch (error) {
-              const errorResponse = formatFetchError(error)
-
-              await helper.logWarning(
-                `POST request error: ${errorResponse.message} (Status: ${errorResponse.status}) - Ignore, continue processing`
-              )
+              try {
+                const infoMessage = `POST conversations #${conversation.conversation_id} to WEBHOOK`
+                await helper.logInfo(infoMessage)
+                const apiResponse = await fetchService.post(args.webhook_url, conversation)
+                debugLogger('POST response:', apiResponse.status)
+              } catch (error) {
+                const errorResponse = formatFetchError(error)
+                await helper.logWarning(
+                  `POST request error: ${errorResponse.message} (Status: ${errorResponse.status}) - Ignore, continue processing`
+                )
+              }
             }
+          } else {
+            // Or store inside JSON file
+            const batchFileName = `twitter-conversations-user-${user_id}-batch-${hash ?? null}.json`
+
+            helper.logInfo(`Storing conversation inside ${batchFileName} file`)
+
+            console.log('conversationCollection', conversationCollection)
+
+            await helper.uploadFile({
+              path: batchFileName,
+              file: JSON.stringify(conversationCollection, null, 2)
+            })
+
+            uploadedFiles.push(batchFileName)
           }
         }
       )
@@ -148,7 +177,13 @@ export const ScrapeTweetFromUserCapability = {
       }
       debugLogger('return : ', 'Successfully')
       await helper.updateStatus('done')
-      return `Successfully retrieved and processed ${totalTweets} tweets (in ${iterationCount} iterations) from the specified User ID, filtered by the given criteria, and sent them to the external API in ${totalWebhookPosts} POSTs request.`
+
+      if (args.webhook_url) {
+        return `Successfully retrieved and processed ${totalTweets} tweets (in ${iterationCount} iterations) from the specified User ID, filtered by the given criteria, and sent them to the external API in ${totalWebhookPosts} POSTs request.`
+      } else {
+        const fileList = uploadedFiles.map(file => `- ${file}`).join('\n')
+        return `Successfully retrieved and processed ${totalTweets} tweets (in ${iterationCount} iterations) from the specified User ID, filtered by the given criteria, and stored them as JSON files:\n${fileList}`
+      }
     } catch (error) {
       debugLogger('Run() error', error)
 
@@ -170,7 +205,7 @@ async function fetchAndProcessTweets(
   twitterService: TwitterService,
   user_id: string,
   args: any,
-  processTweets: (tweets: any[]) => void
+  processTweets: (conversationCollection: any[], hash: string | undefined) => Promise<void>
 ) {
   let pagination_token: string | undefined = args.pagination_token
 
@@ -203,7 +238,7 @@ async function fetchAndProcessTweets(
 
     const conversationCollection = RestructureTweetsByConversation(response.output)
 
-    await processTweets(conversationCollection)
+    await processTweets(conversationCollection, pagination_token)
 
     pagination_token = response.output.meta?.next_token
 

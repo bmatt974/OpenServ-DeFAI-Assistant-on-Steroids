@@ -12,8 +12,8 @@ const schema = z.object({
 
 export const GetConversationsPromptSourcesCapability = {
   name: 'GetConversationsPromptSourcesCapability',
-  description:
-    'Fetches a precompiled list of recent Twitter conversations ready for use by querying an external API. The retrieved conversations are then saved into a file for further processing or usage.',
+  description: `Fetch recent Twitter conversations from an external API.
+  Organize the conversations per author and store them in individual JSON files, one file per author.`,
   schema,
   async run(
     this: CustomAgent,
@@ -30,38 +30,41 @@ export const GetConversationsPromptSourcesCapability = {
       { baseURL: apiBaseUrl }
     )
 
-    helper.logInfo('Loading conversations source file')
+    helper.logInfo('Fetching experts conversations data')
     const response = await fetchService.get('/api/v1/twitter/conversations/prompting')
 
     if (response.status === 200) {
-      const filename = 'latest_conversation.json'
-      const fileContent = JSON.stringify(response.data, null, 2)
-      const payloadFile = {
-        path: filename,
-        file: fileContent
-      }
+      const experts = response.data
 
-      //return fileContent
+      for (let index = 0; index < experts.length; index++) {
+        const expert = experts[index]
+        const filename = `conversations_${expert.expert.username}.json`
+        const fileContent = JSON.stringify(expert, null, 2)
 
-
-      console.log(fileContent)
-
-      try {
-        await helper.uploadFile(payloadFile)
-        return `File saved successfully.`
-      } catch (error) {
-        if (error instanceof Error) {
-          debugLogger('Error:', error.message)
-          console.log(error.message)
-        } else {
-          debugLogger('Unknown error:', error)
-          console.log(error)
+        const payloadFile = {
+          path: filename,
+          file: fileContent
         }
 
-        console.log(error)
+        console.log(`Saving file: ${filename}`)
 
-        return `Error saving file : ${filename}`
+        try {
+          await helper.uploadFile(payloadFile)
+          console.log(`File ${filename} saved successfully.`)
+        } catch (error) {
+          if (error instanceof Error) {
+            debugLogger('Error:', error.message)
+            console.log(error.message)
+          } else {
+            debugLogger('Unknown error:', error)
+            console.log(error)
+          }
+
+          console.log(`Error saving file: ${filename}`)
+        }
       }
+
+      return `All crypto experts Twitter conversations processed.`
     }
 
     return JSON.stringify(response.data, null, 2)

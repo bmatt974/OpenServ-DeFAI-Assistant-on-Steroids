@@ -44,11 +44,12 @@ Create one task per user.
 In case of any error while processing a user, skip to the next user without stopping the process.
 ```
 
-### 🔥 Fetch Latest Crypto Expert Twitter discussions
+### 🔥 Fetch Latest Crypto Expert Twitter Discussions
 **The agent has a dedicated capability to:**
 
 - Retrieve the most recent Twitter discussions, threads, or posts from top crypto experts selected by KOLx.fun.
 - Aggregate and structure these conversations in a clean JSON format.
+- Organize conversations by author and store each author's conversations in a dedicated JSON file.
 - Provide essential metadata for each conversation (e.g., timestamp, expert username, post content, engagement metrics).
 - Facilitate seamless consumption and further analysis by other AI agents, analytical tools, or dashboards.
 
@@ -61,7 +62,7 @@ In case of any error while processing a user, skip to the next user without stop
 
 ```
 Fetches a precompiled list of recent Twitter conversations ready for use by querying an external API.
-The retrieved conversations are then saved into a file for further processing or usage. 
+The retrieved conversations are grouped by author and saved into individual JSON files for further processing or usage.
 Deliver this data to the Copywriter for article generation.
 Do not process or write any article yourself. 
 ```
@@ -114,4 +115,51 @@ Fetch data from https://jsonplaceholder.typicode.com/posts. Use Token BEARER fro
 ### Auth with Username and Password
 ```  
 Fetch data from https://jsonplaceholder.typicode.com/posts with "john" username and password "MySecretLabel" from secret  
+```
+## 📝 Article Generation
+
+Here is an example of an article generated based on the retrieved Twitter conversations:
+
+```
+DeFAI Assistant 🏋️ on Steroids:
+Fetches a precompiled list of recent Twitter conversations ready for use by querying an external API.
+The retrieved conversations are organized per author and saved into separate JSON files, one per author, containing all conversations they participated in.
+For each JSON file, deliver the data to the Copywriter for article generation.
+Do not process or write any article yourself.
+
+Essay Writer:
+For each expert conversations JSON file received, write a dedicated blog post focused solely on that specific expert.
+Process each file individually and generate one article per file. Do not combine multiple experts into a single article.
+For each article:
+- Generate a unique, catchy title directly related to the content and key cryptos mentioned by the expert. Avoid generic titles like "Crypto Market Insights" or "A Dive into Recent Twitter Conversations".
+- Whenever possible, include the most discussed crypto tickers or trending topics in the title. Ensure the title feels specific, engaging, and tailored to the actual discussion.
+For the content:
+- Summarize the expert's discussions by providing essential context and highlighting key points.
+- Prioritize clarity, flow, and reader engagement.
+- Start with a short, catchy introduction (2-3 sentences) to hook the reader.
+- Structure the article using clear headings, bullet points, and short paragraphs. Avoid long text blocks.
+- Bold all crypto tickers mentioned (e.g., $BTC, $ETH).
+- Cite and reference all tweets mentioned in the discussion.
+- Include a dedicated section listing all cryptocurrencies discussed.
+- End the article with a short, impactful conclusion or key takeaway (2-3 lines).
+
+FLUX.1-Schnell Image Generator:
+For each article generated per expert, analyze the Markdown article and create a relevant illustrative image. The image should be in panoramic format matching Twitter dimensions (1200x675px), minimal text, strong visuals. Provide the image URL. Mark all tasks as done for an author if no article exists.
+
+DeFAI Assistant 🏋️ on Steroids: (Article Publishing Task):
+For each expert's article, post the article to the https://kolx.fun/api/v1/articles endpoint (use token bearer in secret) with JSON fields:
+- title (from Essay Writer)
+- description (intro text from Essay Writer)
+- body (Markdown article from Essay Writer)
+- image_url (URL from FLUX.1-Schnell Image Generator)
+Retrieve the published article URL from the API response. Mark all tasks as done for an author if no valid article is available.
+
+Copywriter:
+For each published article, prepare a short, catchy message based on the article title (max 160 characters) summarizing the article. Include the published article URL.
+
+DeFAI Assistant 🏋️ on Steroids: (Twitter Posting Task):
+Post each message on Twitter. Mark all tasks as done for an author if no article URL is available.
+
+DeFAI Assistant 🏋️ on Steroids: (Telegram Posting Task):
+Post each message on Telegram. Mark all tasks as done for an author if no article URL is available.
 ```

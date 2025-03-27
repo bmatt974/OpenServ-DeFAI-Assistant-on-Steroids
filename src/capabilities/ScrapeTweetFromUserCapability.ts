@@ -173,7 +173,7 @@ Pagination is handled to ensure complete data processing.`,
 
       if (totalTweets === 0) {
         debugLogger('return : ', 'No tweets found')
-        await helper.updateStatus('done')
+        //await helper.updateStatus('done')
 
         return `Successfully retrieved tweets from the specified User ID, but none matched the filtering criteria. ${
           args.webhook_url
@@ -182,7 +182,7 @@ Pagination is handled to ensure complete data processing.`,
         }`
       }
       debugLogger('return : ', 'Successfully')
-      await helper.updateStatus('done')
+      //await helper.updateStatus('done')
 
       if (args.webhook_url) {
         return `Successfully retrieved and processed ${totalTweets} tweets (in ${iterationCount} iterations) from the specified User ID, filtered by the given criteria, and sent them to the external API in ${totalWebhookPosts} POSTs request.`

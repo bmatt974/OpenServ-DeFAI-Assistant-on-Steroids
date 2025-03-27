@@ -26,9 +26,6 @@ Create one task per user, and for each task, perform the following actions:
 
 - Retrieve (scrape) the user's tweets and conversations within the specified time range.
 - Immediately POST the scraped data to: https://example.com/api/v1/tweets using the Bearer token stored in the secret.
-
-If an error occurs while processing a specific user (either during scraping or posting), skip to the next user without stopping the overall process.
-
 ```
 
 **Prompt example with result stored in multiple JSON files :**
@@ -41,7 +38,6 @@ Process all tweets and conversations from one hour ago up to now, for each of th
 - tri_sigma_
 
 Create one task per user.
-In case of any error while processing a user, skip to the next user without stopping the process.
 ```
 
 ### 🔥 Fetch Latest Crypto Expert Twitter Discussions
@@ -106,15 +102,15 @@ Post message "Hello world" on Telegram
 
 ### Auth with apiKey
 ```
-Fetch data from https://api.coingecko.com/api/v3/coins/list with apiKey "x_cg_demo_api_key" and value with "COINGECKO_API_KEY" from secret
+Post data to https://my-cms-website-example.com/api/posts with apiKey "X-API-Key" and value with "MY-CMS-WEBSITE_API_KEY" from secret.
 ```
 ### Auth with Token BEARER
 ```
-Fetch data from https://jsonplaceholder.typicode.com/posts. Use Token BEARER from secret.  
+Post data to https://jsonplaceholder.typicode.com/posts. Use Token BEARER from secret.
 ```  
 ### Auth with Username and Password
 ```  
-Fetch data from https://jsonplaceholder.typicode.com/posts with "john" username and password "MySecretLabel" from secret  
+Post data to https://example.com/posts with "john" username and password "MySecretLabel" from secret.
 ```
 ## 📝 Article Generation
 

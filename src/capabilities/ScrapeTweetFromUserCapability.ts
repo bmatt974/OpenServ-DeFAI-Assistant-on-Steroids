@@ -175,7 +175,11 @@ Pagination is handled to ensure complete data processing.`,
         debugLogger('return : ', 'No tweets found')
         await helper.updateStatus('done')
 
-        return `No more tweets to process for Twitter user ID ${args.user_id}.`
+        return `Successfully retrieved tweets from the specified User ID, but none matched the filtering criteria. ${
+          args.webhook_url
+            ? 'Nothing was sent to the external API.'
+            : 'No JSON files were generated.'
+        }`
       }
       debugLogger('return : ', 'Successfully')
       await helper.updateStatus('done')

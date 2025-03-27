@@ -218,8 +218,8 @@ async function fetchAndProcessTweets(
     const queryParams = {
       max_results: args.max_results,
       pagination_token,
-      start_time: '2025-02-01T00:00:00Z', //args.start_time,
-      //end_time: args.end_time,
+      start_time: args.start_time,
+      end_time: args.end_time,
       since_id: args.since_id,
       until_id: args.until_id,
       'tweet.fields': TWITTER_TWEET_FIELDS.join(','),
